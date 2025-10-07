@@ -1,7 +1,7 @@
 package storage
 
 //go:generate sh -c "rm -rf mocks && mkdir -p mocks"
-//go:generate minimock -o ./mocks/ -s ".go"
+//go:generate mockgen -source=./storage.go -destination=./mocks/storage_mocks.go -package=mocks
 
 import (
 	"time"
