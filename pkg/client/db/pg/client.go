@@ -2,24 +2,25 @@ package pg
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Dokhoyan/common/pkg/client/db"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 )
 
 type pgClient struct {
 	masterDBC db.DB
 }
 
+// New - создает новый клиент БД
 func New(ctx context.Context, dsn string) (db.Client, error) {
 	dbc, err := pgxpool.Connect(ctx, dsn)
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to db: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	return &pgClient{
-		masterDBC: &pg{dbc: dbc},
+		masterDBC: NewDB(dbc),
 	}, nil
 }
 

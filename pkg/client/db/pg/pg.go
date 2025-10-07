@@ -16,40 +16,18 @@ import (
 
 type key string
 
-const (
-	TxKey key = "tx"
-)
+// TxKey - ключ хранения транзакции в контексте
+const TxKey key = "tx"
 
 type pg struct {
 	dbc *pgxpool.Pool
 }
 
+// NewDB - создает имплементацию подключения к БД
 func NewDB(dbc *pgxpool.Pool) db.DB {
 	return &pg{
 		dbc: dbc,
 	}
-}
-
-func (p *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
-	logQuery(ctx, q, args...)
-
-	row, err := p.QueryContext(ctx, q, args...)
-	if err != nil {
-		return err
-	}
-
-	return pgxscan.ScanOne(dest, row)
-}
-
-func (p *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
-	logQuery(ctx, q, args...)
-
-	rows, err := p.QueryContext(ctx, q, args...)
-	if err != nil {
-		return err
-	}
-
-	return pgxscan.ScanAll(dest, rows)
 }
 
 func (p *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (pgconn.CommandTag, error) {
@@ -85,19 +63,42 @@ func (p *pg) QueryRowContext(ctx context.Context, q db.Query, args ...interface{
 	return p.dbc.QueryRow(ctx, q.QueryRaw, args...)
 }
 
-func (p *pg) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
-	return p.dbc.BeginTx(ctx, txOptions)
+func (p *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+	logQuery(ctx, q, args...)
+
+	row, err := p.QueryContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+
+	return pgxscan.ScanOne(dest, row)
+}
+
+func (p *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+	logQuery(ctx, q, args...)
+
+	row, err := p.QueryContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+
+	return pgxscan.ScanAll(dest, row)
 }
 
 func (p *pg) Ping(ctx context.Context) error {
 	return p.dbc.Ping(ctx)
 }
 
+func (p *pg) BeginTx(ctx context.Context, tx pgx.TxOptions) (db.Tx, error) {
+	return p.dbc.BeginTx(ctx, tx)
+}
+
 func (p *pg) Close() {
 	p.dbc.Close()
 }
 
-func MakeContextTx(ctx context.Context, tx pgx.Tx) context.Context {
+// MakeContext - кладет в context менеджер транзакций
+func MakeContext(ctx context.Context, tx pgx.Tx) context.Context {
 	return context.WithValue(ctx, TxKey, tx)
 }
 
